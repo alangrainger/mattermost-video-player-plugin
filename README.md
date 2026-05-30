@@ -4,6 +4,20 @@ Replaces the file-attachment chip for video uploads with an inline HTML5 `<video
 
 The HTML5 player provides standard controls including fullscreen, seek, volume, and playback speed. The video's first frame is shown before play (Mattermost's server does not generate thumbnails for video files, so there is no separate poster image).
 
+## Install
+
+You will need Mattermost system-admin access.
+
+1. Download the latest `mattermost-video-player-<version>.tar.gz` from the [GitHub Releases page](../../releases).
+2. In Mattermost, go to **System Console > Plugin Management**. Make sure **Enable Plugin Uploads** is set to *true*.
+3. Under **Upload Plugin**, choose the downloaded tar.gz and click **Upload**.
+4. In the **Installed Plugins** list, find "Video Player" and click **Enable**.
+5. Refresh the Mattermost browser tab (Ctrl+Shift+R / Cmd+Shift+R) so the new webapp bundle is picked up.
+
+After enabling, any post containing a video attachment will display an inline player in place of the file chip.
+
+To uninstall: in the same System Console page, click **Disable** then **Remove** on the plugin row.
+
 ## How it works
 
 A small CSS rule hides any file-attachment chip whose icon class identifies it as a video. A MutationObserver then watches for those chips appearing in the DOM and, for each, inserts a sibling `<video controls>` element pointing at the Mattermost file URL.
