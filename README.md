@@ -8,7 +8,7 @@ The HTML5 player provides standard controls including fullscreen, seek, volume, 
 
 You will need Mattermost system-admin access.
 
-1. Download the latest `mattermost-video-player-<version>.tar.gz` from the [GitHub Releases page](../../releases).
+1. Download the latest `mattermost-video-player-<version>.tar.gz` from the [GitHub Releases page](https://github.com/alangrainger/mattermost-video-player-plugin/releases).
 2. In Mattermost, go to **System Console > Plugin Management**. Make sure **Enable Plugin Uploads** is set to *true*.
 3. Under **Upload Plugin**, choose the downloaded tar.gz and click **Upload**.
 4. In the **Installed Plugins** list, find "Video Player" and click **Enable**.
