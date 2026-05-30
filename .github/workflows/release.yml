@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+  # Required for actions/attest-build-provenance
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build plugin
+        run: make bundle
+
+      - name: Rename artifact to include tag
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          mv dist/mattermost-video-player.tar.gz "dist/mattermost-video-player-${tag}.tar.gz"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/mattermost-video-player-*.tar.gz
+
+      - name: Create draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release create "$tag" \
+            --title="$tag" \
+            --draft \
+            "dist/mattermost-video-player-${tag}.tar.gz"
