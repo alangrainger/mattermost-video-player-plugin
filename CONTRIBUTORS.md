@@ -21,7 +21,7 @@ Verified against `mattermost/mattermost` master, mid-2026. If a future Mattermos
 | Selector                                          | Source                                                                              | Purpose                                     |
 |---------------------------------------------------|-------------------------------------------------------------------------------------|---------------------------------------------|
 | `.post-image__column`                             | `webapp/channels/src/components/file_attachment/file_attachment.tsx` ~line 400      | Outer file chip                             |
-| `.post-image__type`                               | same file, ~line 342                                                                | Extension badge text (uppercased)           |
+| `.file-icon.video`                                | Mattermost's icon-class mapping for video MIME types                                | Marks a chip as video; used by CSS and JS   |
 | `.post-image__download a[href*="/api/v4/files/"]` | `webapp/channels/src/components/file_attachment/filename_overlay.tsx` ~line 92      | Download link; href contains the file id    |
 
 We deliberately do NOT rely on `button[id^="file_action_button_"]` (the dropdown action button), even though it also carries the file id. That button is conditionally rendered and absent in some views or permission states (confirmed via real DOM inspection on Mattermost server 11.x), so it is a less reliable source than the download link.

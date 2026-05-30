@@ -1,9 +1,9 @@
 (() => {
     'use strict';
 
-    const VIDEO_EXT = /^(MP4|WEBM|OGV|OGG|MOV|M4V)$/i;
     const FILE_ID = /\/api\/v4\/files\/([^/?]+)/;
-    const INJECTED_CSS = '.post .post-image__column:has(.file-icon.video){display:none!important} .post{overflow:hidden!important}';
+    const INJECTED_CSS = `.post .post-image__column:has(.file-icon.video){display:none!important} .post{overflow:hidden!important} 
+        .mm-video{width:100%;max-width:640px;max-height:480px;display:block}`;
 
     /**
      * Inject the plugin's CSS once at startup. The first rule hides Mattermost's
@@ -27,24 +27,18 @@
      */
     function swap(chip) {
         if (!chip.closest('.post') || chip.previousElementSibling?.tagName === 'VIDEO') return;
-        const typeEl = chip.querySelector('.post-image__type');
-        if (!typeEl || !VIDEO_EXT.test(typeEl.textContent.trim())) return;
+        if (!chip.querySelector('.file-icon.video')) return;
 
         const link = chip.querySelector('.post-image__download a[href*="/api/v4/files/"]');
         const match = link?.getAttribute('href').match(FILE_ID);
         if (!match) return;
-        const fileId = match[1];
 
         const video = document.createElement('video');
         video.controls = true;
         video.preload = 'auto';
-        video.src = `/api/v4/files/${fileId}`;
-        video.style.width = '100%';
-        video.style.maxWidth = '640px';
-        video.style.maxHeight = '480px';
-        video.style.display = 'block';
-
-        chip.parentElement?.insertBefore(video, chip);
+        video.src = `/api/v4/files/${match[1]}`;
+        video.className = 'mm-video';
+        chip.parentElement.insertBefore(video, chip);
     }
 
     /**
