@@ -66,15 +66,19 @@ We do NOT remove or replace any DOM node React owns. Instead:
 
 The chip stays in the DOM untouched (just invisible), and our video is a separate element React knows nothing about. We deliberately do NOT try to add classes or attributes to React-managed elements: React's reconciliation strips them on the next render, and re-adding them via a `MutationObserver` causes browser-locking loops.
 
-## The `.post { overflow: hidden !important }` rule (do not remove)
+## The `transform: translateZ(0)` on `.mm-video` (do not remove)
 
-This rule looks unrelated to a video player and a future contributor will be tempted to delete it. **Don't.**
+This declaration looks cosmetic and a future contributor will be tempted to delete it. **Don't.**
 
-Mattermost's `.post:hover` rule toggles `overflow: hidden` to `overflow: visible`. In Firefox, this overflow change triggers a compositor-layer rebuild on the post subtree, which detaches and re-attaches the `<video>` element's render surface. The visible result is a ~200ms flash where the video's content (thumbnail + controls) disappears and the page background shows through, every time the mouse enters or leaves the post.
+Mattermost's `.post:hover` rule toggles `overflow: hidden` to `overflow: visible`. In Firefox, that overflow change triggers a compositor-layer rebuild on the post subtree, which detaches and re-attaches the `<video>` element's render surface. The visible result is a ~200ms flash where the video content disappears and the page background shows through, every time the mouse enters or leaves the post.
 
-The fix is to keep `.post`'s overflow stable: `.post { overflow: hidden !important }` blocks the toggle from ever happening. The fix is blanket across all posts (not scoped to ones containing our video) because scoping via JS class fails - React strips the class on re-render - and scoping via `:has()` is unreliable in Firefox for dynamically inserted descendants.
+`transform: translateZ(0)` promotes the `<video>` to its own compositor layer. Once on its own layer, the video's render surface is independent of `.post`'s compositor state, so the parent can toggle overflow as much as it likes without tearing the video. Tested and confirmed in Firefox.
 
-Side effect: any popover, dropdown, or tooltip rooted inside a `.post` that would extend beyond the post's box is now clipped. The current Mattermost UI does not seem to use this pattern visibly, so the trade-off is invisible in practice. If a future Mattermost release adds such a thing, target the override more narrowly then.
+### Why not just pin `.post { overflow: hidden !important }`?
+
+An earlier version of this plugin did exactly that — blocking Mattermost's hover toggle from ever running. It worked for the flicker but clipped any popover rooted inside a `.post`, most visibly the emoji reaction picker on single-line posts adjacent to videos. The translateZ approach has no such side effect because we only touch our own element.
+
+The general lesson, worth remembering the next time a parent-rendering quirk tears one of our elements: prefer hardening the element you own (compositor-layer promotion, stacking context, isolation) over constraining the parent's behaviour. You own less of the DOM than you think, but you own your own injected element fully — fix it there.
 
 ## Known fragilities
 

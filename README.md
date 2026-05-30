@@ -4,6 +4,8 @@ Mattermost plugin to play video files (MP4, WEBM, MOV, M4V) inline in channel po
 
 The HTML5 player provides standard controls including fullscreen, seek, volume, and playback speed. The video's first frame is shown before play (Mattermost's server does not generate thumbnails for video files, so there is no separate poster image).
 
+![Mattermost channel showing a video playing inline in place of the default file-attachment chip](screenshot.webp)
+
 ## Why doesn't Mattermost play videos inline?
 
 Out of the box, Mattermost's web and desktop clients render uploaded video files as a generic file-attachment chip — the user has to click to open a preview modal, or download the file, before it will play. The Mattermost mobile app already plays videos inline in the channel stream; the web/desktop clients do not. This plugin closes that gap by inserting an HTML5 `<video>` element under each video attachment so it plays in place, the same way images already do.

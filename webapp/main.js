@@ -2,15 +2,14 @@
     'use strict';
 
     const FILE_ID = /\/api\/v4\/files\/([^/?]+)/;
-    const INJECTED_CSS = `.post .post-image__column:has(.file-icon.video){display:none!important} .post{overflow:hidden!important} 
-        .mm-video{width:100%;max-width:640px;max-height:480px;display:block}`;
+    const INJECTED_CSS = `.post .post-image__column:has(.file-icon.video){display:none!important}
+        .mm-video{width:100%;max-width:640px;max-height:480px;display:block;transform:translateZ(0)}`;
 
     /**
      * Inject the plugin's CSS once at startup. The first rule hides Mattermost's
      * default file-attachment chip for videos so our <video> element shows in
-     * its place. The second prevents a Firefox-specific compositor flash on post
-     * hover (Mattermost toggles .post overflow on :hover, which causes Firefox
-     * to detach and re-attach the video's render layer; see CONTRIBUTORS.md).
+     * its place. The second sizes the inline video and promotes it to its own
+     * compositor layer (transform:translateZ(0)).
      */
     function injectStyle() {
         const s = document.createElement('style');
