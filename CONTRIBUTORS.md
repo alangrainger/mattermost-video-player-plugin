@@ -60,8 +60,9 @@ Check:
 
 We do NOT remove or replace any DOM node React owns. Instead:
 
-1. A CSS rule injected at init hides any chip that contains `.file-icon.video`. The rule survives React re-renders automatically: any new chip React produces with the same shape is hidden by the same selector.
+1. A CSS rule injected at init hides any chip that contains `.file-icon.video` **and is inside a `.post`**. The `.post` ancestor scoping is critical: Mattermost reuses the same `.post-image__column` markup in the upload-preview area (where the user picks files to send), so without it our rule would hide the file the user is trying to upload. The rule survives React re-renders automatically: any new chip React produces with the same shape is hidden.
 2. Our `<video>` element is inserted as the chip's preceding sibling. The idempotency check is simply: does the chip's `previousElementSibling` already exist and is it a `<video>`? If yes, skip.
+3. The `swap()` function also short-circuits if the chip has no `.post` ancestor, so we don't inject videos into the upload-preview area either.
 
 The chip stays in the DOM untouched (just invisible), and our video is a separate element React knows nothing about. We deliberately do NOT try to add classes or attributes to React-managed elements: React's reconciliation strips them on the next render, and re-adding them via a `MutationObserver` causes browser-locking loops.
 

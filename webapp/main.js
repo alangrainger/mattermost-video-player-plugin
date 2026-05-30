@@ -4,7 +4,7 @@
     const VIDEO_EXT = /^(MP4|WEBM|OGV|OGG|MOV|M4V)$/;
     const FILE_ID = /\/api\/v4\/files\/([^/?]+)/;
     const INJECTED_CSS = `
-        .post-image__column:has(.file-icon.video){display:none!important}
+        .post .post-image__column:has(.file-icon.video){display:none!important}
         .post{overflow:hidden!important}
     `;
 
@@ -22,12 +22,14 @@
     }
 
     /**
-     * If the given file-attachment chip refers to a video upload, insert an
-     * HTML5 <video> element as its sibling. The chip itself stays in the DOM
-     * (hidden by our injected CSS) so React's reconciliation never fights us
-     * over the injected element.
+     * If the given file-attachment chip is inside a post AND refers to a video
+     * upload, insert an HTML5 <video> element as its sibling. The chip itself
+     * stays in the DOM (hidden by our injected CSS) so React's reconciliation
+     * never fights us over the injected element. Skipping chips outside a
+     * `.post` ancestor leaves the upload-preview area unaffected.
      */
     function swap(chip) {
+        if (!chip.closest('.post')) return;
         const typeEl = chip.querySelector('.post-image__type');
         if (!typeEl || !VIDEO_EXT.test(typeEl.textContent.trim())) return;
         if (chip.previousElementSibling?.tagName === 'VIDEO') return;
