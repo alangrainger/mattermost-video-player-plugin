@@ -2,7 +2,7 @@
 
 ## Primary directive
 
-Keep this plugin as small and simple as possible. ~30 lines of vanilla JS in `webapp/main.js` is the whole thing. The HTML5 `<video controls>` element does all the real work. Resist the urge to add features the browser already provides for free (custom controls, thumbnail generation, codec detection, picture-in-picture buttons, etc.).
+Keep this plugin as small and simple as possible. ~45 lines of vanilla JS in `webapp/main.js` is the whole thing. The HTML5 `<video controls>` element does all the real work. Resist the urge to add features the browser already provides for free (custom controls, thumbnail generation, codec detection, picture-in-picture buttons, etc.).
 
 If a change would noticeably grow the codebase, stop and check whether it's truly required.
 
