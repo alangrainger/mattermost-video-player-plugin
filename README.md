@@ -40,7 +40,7 @@ Produces `dist/mattermost-video-player.tar.gz`, ready to upload via **System Con
 
 ## Compatibility
 
-Targets Mattermost server 10.0.0 and later, as that is what I'm running and have tested against. Relies on the current `.post-image__column` / `.post-image__download` / `.file-icon.video` DOM shape in the webapp. If Mattermost refactors that markup, this plugin will silently no-op (chips will continue to render as before). Also requires a browser supporting CSS `:has()` (Chrome 105+, Firefox 121+, Safari 15.4+).
+Targets Mattermost server v10 and later, as that is what I'm running and have tested against. Relies on the current `.post-image__column` / `.post-image__download` / `.file-icon.video` DOM shape in the webapp. If Mattermost refactors that markup, this plugin will silently no-op (chips will continue to render as before). Also requires a browser supporting CSS `:has()` (Chrome 105+, Firefox 121+, Safari 15.4+).
 
 ## What video formats are supported?
 
