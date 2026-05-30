@@ -24,7 +24,7 @@ Verified against `mattermost/mattermost` master, mid-2026. If a future Mattermos
 | `.post-image__type`                               | same file, ~line 342                                                                | Extension badge text (uppercased)           |
 | `.post-image__download a[href*="/api/v4/files/"]` | `webapp/channels/src/components/file_attachment/filename_overlay.tsx` ~line 92      | Download link; href contains the file id    |
 
-We deliberately do NOT rely on `button[id^="file_action_button_"]` (the dropdown action button), even though it also carries the file id. That button is conditionally rendered and absent in some views or permission states (confirmed via real DOM inspection on Mattermost server 9.x and 10.x), so it is a less reliable source than the download link.
+We deliberately do NOT rely on `button[id^="file_action_button_"]` (the dropdown action button), even though it also carries the file id. That button is conditionally rendered and absent in some views or permission states (confirmed via real DOM inspection on Mattermost server 11.x), so it is a less reliable source than the download link.
 
 File URLs (cookie-authenticated by the user's Mattermost session):
 - Streaming: `/api/v4/files/{id}` (the `?download=1` flag in the link href is dropped, since it triggers `Content-Disposition: attachment` and would prevent inline playback)
