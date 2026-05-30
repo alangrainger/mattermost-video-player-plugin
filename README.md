@@ -1,8 +1,12 @@
 # Mattermost Video Player Plugin
 
-Replaces the file-attachment chip for video uploads with an inline HTML5 `<video>` element on Mattermost web and desktop. This matches the inline behaviour of the Mattermost mobile app, which already plays videos inline.
+Mattermost plugin to play video files (MP4, WEBM, MOV, M4V) inline in channel posts on Mattermost web and desktop, instead of showing them as a download-only file attachment. Matches the inline video playback behaviour of the Mattermost mobile app.
 
 The HTML5 player provides standard controls including fullscreen, seek, volume, and playback speed. The video's first frame is shown before play (Mattermost's server does not generate thumbnails for video files, so there is no separate poster image).
+
+## Why doesn't Mattermost play videos inline?
+
+Out of the box, Mattermost's web and desktop clients render uploaded video files as a generic file-attachment chip — the user has to click to open a preview modal, or download the file, before it will play. The Mattermost mobile app already plays videos inline in the channel stream; the web/desktop clients do not. This plugin closes that gap by inserting an HTML5 `<video>` element under each video attachment so it plays in place, the same way images already do.
 
 ## Install
 
@@ -36,6 +40,10 @@ Produces `dist/mattermost-video-player.tar.gz`, ready to upload via **System Con
 
 Targets Mattermost server 10.0.0 and later, as that is what I'm running and have tested against. Relies on the current `.post-image__column` / `.post-image__download` / `.file-icon.video` DOM shape in the webapp. If Mattermost refactors that markup, this plugin will silently no-op (chips will continue to render as before). Also requires a browser supporting CSS `:has()` (Chrome 105+, Firefox 121+, Safari 15.4+).
 
-## Supported formats
+## What video formats are supported?
 
-The browser's native `<video>` element decides what plays. MP4 (H.264/AAC) is the safest bet for cross-browser playback. WEBM works in Chromium and Firefox. MOV and M4V depend on the browser's codec support.
+The browser's native `<video>` element decides what plays. MP4 (H.264/AAC) is the safest bet for cross-browser playback. WEBM works in Chromium and Firefox. MOV and M4V depend on the browser's codec support. Anything Mattermost classifies as a video file is offered to the player; if the browser can't decode it, the player shows its standard "can't play" state and the user can still download the file via right-click.
+
+## Where does this plugin work?
+
+Anywhere Mattermost renders a post — main channel stream, right-hand thread pane, direct messages, and group messages. There is nothing channel-specific or thread-specific in the plugin; it observes every post in the DOM.
