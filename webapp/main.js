@@ -1,12 +1,9 @@
 (() => {
     'use strict';
 
-    const VIDEO_EXT = /^(MP4|WEBM|OGV|OGG|MOV|M4V)$/;
+    const VIDEO_EXT = /^(MP4|WEBM|OGV|OGG|MOV|M4V)$/i;
     const FILE_ID = /\/api\/v4\/files\/([^/?]+)/;
-    const INJECTED_CSS = `
-        .post .post-image__column:has(.file-icon.video){display:none!important}
-        .post{overflow:hidden!important}
-    `;
+    const INJECTED_CSS = '.post .post-image__column:has(.file-icon.video){display:none!important} .post{overflow:hidden!important}';
 
     /**
      * Inject the plugin's CSS once at startup. The first rule hides Mattermost's
@@ -29,10 +26,9 @@
      * `.post` ancestor leaves the upload-preview area unaffected.
      */
     function swap(chip) {
-        if (!chip.closest('.post')) return;
+        if (!chip.closest('.post') || chip.previousElementSibling?.tagName === 'VIDEO') return;
         const typeEl = chip.querySelector('.post-image__type');
         if (!typeEl || !VIDEO_EXT.test(typeEl.textContent.trim())) return;
-        if (chip.previousElementSibling?.tagName === 'VIDEO') return;
 
         const link = chip.querySelector('.post-image__download a[href*="/api/v4/files/"]');
         const match = link?.getAttribute('href').match(FILE_ID);
@@ -70,8 +66,8 @@
         initialize() {
             injectStyle();
             scan(document.body);
-            new MutationObserver((muts) => {
-                for (const m of muts) for (const n of m.addedNodes) scan(n);
+            new MutationObserver(mutations => {
+                for (const m of mutations) for (const n of m.addedNodes) scan(n);
             }).observe(document.body, {childList: true, subtree: true});
         },
     });
