@@ -2,7 +2,7 @@
 
 Mattermost plugin to play video files (MP4, WEBM, MOV, M4V) inline in channel posts on Mattermost web and desktop, instead of showing them as a download-only file attachment. Matches the inline video playback behaviour of the Mattermost mobile app.
 
-The HTML5 player provides standard controls including fullscreen, seek, volume, and playback speed. The video's first frame is shown before play (Mattermost's server does not generate thumbnails for video files, so there is no separate poster image).
+The HTML5 player provides standard controls including fullscreen, seek, volume, and playback speed. The plugin is tiny - just [40 lines of vanilla Javascript](https://github.com/alangrainger/mattermost-video-player-plugin/blob/main/webapp/main.js) (plus comments).
 
 ![Mattermost channel showing a video playing inline in place of the default file-attachment chip](screenshot.webp)
 
@@ -28,7 +28,7 @@ To uninstall: in the same System Console page, click **Disable** then **Remove**
 
 A small CSS rule hides any file-attachment chip whose icon class identifies it as a video. A MutationObserver then watches for those chips appearing in the DOM and, for each, inserts a sibling `<video controls>` element pointing at the Mattermost file URL.
 
-This is approximately 50 lines of vanilla JavaScript with no build step. The plugin ships as a single JS file plus `plugin.json`.
+This is approximately 40 lines of vanilla JavaScript with no build step. The plugin ships as a single JS file plus `plugin.json`.
 
 ## Build
 
