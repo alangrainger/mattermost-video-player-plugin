@@ -2,13 +2,15 @@
 
 ## Primary directive
 
-Keep this plugin as small and simple as possible. ~45 lines of vanilla JS in `webapp/main.js` is the whole thing. The HTML5 `<video controls>` element does all the real work. Resist the urge to add features the browser already provides for free (custom controls, thumbnail generation, codec detection, picture-in-picture buttons, etc.).
+Keep this plugin as small and simple as possible. ~60 lines of vanilla JS in `webapp/main.js` is the whole thing. The HTML5 `<video controls>` element does all the real work. Resist the urge to add features the browser already provides for free (custom controls, thumbnail generation, codec detection, picture-in-picture buttons, etc.).
 
 If a change would noticeably grow the codebase, stop and check whether it's truly required.
 
 ## Why DOM injection rather than the plugin API
 
 Mattermost's documented `registerFilePreviewComponent` hook only fires inside the file preview modal (verified at `webapp/channels/src/components/file_preview_modal/file_preview_modal.tsx` lines 412-424 in `mattermost/mattermost` master, mid-2026). The inline file-attachment chip in the channel stream has **no plugin hook at all** in current Mattermost. To render a `<video>` element under a post the way the mobile app does, the only available approach is to walk the DOM and replace chips after React renders them.
+
+On v12+ the same gap exists in the MediaGallery: `file_attachment_list.tsx` (lines 56-77 in the `v12.1.0` tag) routes single-video and all-media multi-file posts straight to the gallery without consulting plugin file-preview overrides, so `registerFilePreviewComponent` cannot reach those posts either. Posts mixing video with non-media files still render as file chips on v12+.
 
 A `MutationObserver` on `document.body` is the right primitive for this. Polling is wrong.
 
@@ -23,6 +25,13 @@ Verified against `mattermost/mattermost` master, mid-2026. If a future Mattermos
 | `.post-image__column`                             | `webapp/channels/src/components/file_attachment/file_attachment.tsx` ~line 400      | Outer file chip                             |
 | `.file-icon.video`                                | Mattermost's icon-class mapping for video MIME types                                | Marks a chip as video; used by CSS and JS   |
 | `.post-image__download a[href*="/api/v4/files/"]` | `webapp/channels/src/components/file_attachment/filename_overlay.tsx` ~line 92      | Download link; href contains the file id    |
+| `.MediaGallery__tile`                             | `webapp/channels/src/components/file_attachment_list/media_gallery/tiles/video_tile.tsx` ~line 199 (v12.1.0) | Outer gallery tile; carries inline JS-computed width/height |
+| `.MediaGallery__tile__play_indicator`             | `webapp/channels/src/components/file_attachment_list/media_gallery/tiles/video_tile.tsx` ~line 224 (v12.1.0) | Marks a tile as video (JS guard) |
+| `.image-preview-utility-buttons-container`        | `webapp/channels/src/components/file_attachment_list/media_gallery/tiles/tile_utility_buttons.tsx` ~line 77 (v12.1.0) | Download/utility buttons; the only React child kept visible beside the player |
+| `a.size-aware-image__download`                    | `webapp/channels/src/components/file_attachment_list/media_gallery/tiles/tile_utility_buttons.tsx` ~line 111 (v12.1.0) | Download link; href contains the file id |
+| `.MediaGallery__row`                              | `webapp/channels/src/components/file_attachment_list/media_gallery/media_gallery.tsx` ~line 275 (v12.1.0) | Row wrapper; carries an inline JS-computed height that must be released, and is made to wrap so released tiles fit multi-item rows |
+
+Note: master has already removed the per-row wrapper (tiles sit directly in `MediaGallery__rows_inner`, sized by a CSS variable on the tile), so `.MediaGallery__row` no longer exists there.
 
 We deliberately do NOT rely on `button[id^="file_action_button_"]` (the dropdown action button), even though it also carries the file id. That button is conditionally rendered and absent in some views or permission states (confirmed via real DOM inspection on Mattermost server 11.x), so it is a less reliable source than the download link.
 
@@ -56,6 +65,14 @@ Check:
 4. No flicker, flash, or visual artifact when hovering the post (especially in Firefox).
 5. Video renders correctly in the RHS thread pane.
 
+On a v12+ server, also check:
+6. A video posted alone (or alongside only images/videos) renders as a MediaGallery tile and is replaced by the inline player.
+7. Clicking the player or pressing Space/Enter on it does not open the fullscreen modal.
+8. The tile's download button still downloads the file.
+9. A video posted alongside a non-media file (e.g. a PDF) still renders as a file chip and is handled by the chip path.
+10. A gallery video opened in the RHS thread pane shrinks to fit the narrow pane instead of overflowing or being clipped (toggle the RHS open/closed and resize the window to exercise `packRows`).
+11. A post with several videos (or images plus a video) lays the released tiles out across a wrapping row without clipping or horizontal overflow.
+
 ## Coexisting with React
 
 We do NOT remove or replace any DOM node React owns. Instead:
@@ -66,13 +83,17 @@ We do NOT remove or replace any DOM node React owns. Instead:
 
 The chip stays in the DOM untouched (just invisible), and our video is a separate element React knows nothing about. We deliberately do NOT try to add classes or attributes to React-managed elements: React's reconciliation strips them on the next render, and re-adding them via a `MutationObserver` causes browser-locking loops.
 
+For v12+ gallery tiles the same principles hold with one structural difference: the `<video>` (also classed `.mm-video`) is prepended *inside* the tile rather than inserted as a preceding sibling. It must live inside the tile because `packRows` repacks tiles across `.MediaGallery__row` wrappers whenever the container resizes (opening/closing the RHS, window resize); a sibling `<video>` placed in a row would be left behind as an orphan when its tile ends up in a different row (rows and tiles are keyed per row, so React unmounts and remounts the tile rather than moving it). Keeping it inside the tile ties its lifecycle to the tile and leaves the utility buttons intact. React leaves the injected child in place across re-renders.
+
+No classes or attributes are added to the tile: every rule keys on the presence of our own injected video via `.MediaGallery__tile:has(> .mm-video)`, and the idempotency check is simply whether the tile already contains that video. A single `:not()` rule hides every direct child of the tile except our video and `.image-preview-utility-buttons-container`, so the hiding does not depend on the thumbnail/placeholder/badge class names. The tile's inline width/height and the row's inline height are overridden with `!important` rules, since React re-renders re-apply those inline styles. The tile also gets `max-width:100%`, `flex:0 1 auto` and `min-width:0` so it shrinks to fit narrow panes (e.g. the RHS), and the row gets `flex-wrap:wrap` so several released tiles wrap instead of overflowing and clipping.
+
 ## The `transform: translateZ(0)` on `.mm-video` (do not remove)
 
 This declaration looks cosmetic and a future contributor will be tempted to delete it. **Don't.**
 
 Mattermost's `.post:hover` rule toggles `overflow: hidden` to `overflow: visible`. In Firefox, that overflow change triggers a compositor-layer rebuild on the post subtree, which detaches and re-attaches the `<video>` element's render surface. The visible result is a ~200ms flash where the video content disappears and the page background shows through, every time the mouse enters or leaves the post.
 
-`transform: translateZ(0)` promotes the `<video>` to its own compositor layer. Once on its own layer, the video's render surface is independent of `.post`'s compositor state, so the parent can toggle overflow as much as it likes without tearing the video. Tested and confirmed in Firefox.
+`transform: translateZ(0)` promotes the `<video>` to its own compositor layer. Once on its own layer, the video's render surface is independent of `.post`'s compositor state, so the parent can toggle overflow as much as it likes without tearing the video. Tested and confirmed in Firefox. The gallery player reuses the same `.mm-video` class, so it inherits this declaration too.
 
 ### Why not just pin `.post { overflow: hidden !important }`?
 
@@ -86,6 +107,10 @@ The general lesson, worth remembering the next time a parent-rendering quirk tea
 - The chip-hide CSS rule uses `:has()`, which requires Chrome 105+, Firefox 121+, Safari 15.4+. Mattermost-supported browsers are well above these floors in 2026.
 - Codec support is the browser's responsibility, not ours. MP4 (H.264/AAC) plays everywhere; MOV, M4V, WEBM, and OGV depend on the browser. We accept this trade-off rather than detecting and warning.
 - The `<video>` uses `preload="auto"`, which tells the browser to eagerly download the video on page load (not just metadata). This makes click-to-play instant in the common case (no waiting for buffer) and makes the first frame render reliably across browsers. Trade-off: every video in view starts downloading on page load even if the user never plays it. For typical chat-app usage this is fine, but if it ever becomes a bandwidth problem the alternative is `preload="metadata"` plus a custom buffering overlay wired to the `waiting`/`playing` events.
+- On v12+, Mattermost's `VideoTile` runs its own `useFirstFramePoster` hook (`video_tile.tsx`): it spins up a hidden `crossOrigin="anonymous"`, `preload="metadata"` `<video>` to seek to 0.1s and canvas-encode a JPEG poster, which our CSS then hides. So each gallery video is fetched twice — once by React's poster hook and once by our `preload="auto"` player. We can't suppress the poster hook without touching React-managed state, and the poster fetch is metadata-only and cached per file id, so we accept the duplicate request rather than fight it.
+- On v12+, when `packRows` repacks a multi-item post into different rows (e.g. toggling the RHS), React remounts the affected tiles and our player is re-injected, so a video that is playing in that post restarts.
+- On v12+, collapsing a gallery only adds `MediaGallery__rows--collapsed` (hidden via CSS); the tiles stay mounted, so a playing video keeps playing audio while hidden. We do not pause it, as that would need extra JS for a minor edge case.
+- On v12+, our player sits inside a tile with `role="button"` and an "Press Enter or Space to play" label. ARIA treats a button's children as presentational, so screen readers may not expose the native controls well. Fixing it would mean editing attributes on a React-managed node, which we don't do.
 
 ## Releasing
 

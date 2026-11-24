@@ -1,14 +1,14 @@
 # Mattermost Video Player Plugin
 
-Mattermost plugin to play video files (MP4, WEBM, MOV, M4V) inline in channel posts on Mattermost web and desktop, instead of showing them as a download-only file attachment. Matches the inline video playback behaviour of the Mattermost mobile app.
+Mattermost plugin to play video files (MP4, WEBM, MOV, M4V) inline in channel posts on Mattermost web and desktop, instead of showing them as a download-only file attachment (v10/v11) or a click-to-open gallery tile (v12+). Matches the inline video playback behaviour of the Mattermost mobile app.
 
-The HTML5 player provides standard controls including fullscreen, seek, volume, and playback speed. The plugin is tiny - just [40 lines of vanilla Javascript](https://github.com/alangrainger/mattermost-video-player-plugin/blob/main/webapp/main.js) (plus comments).
+The HTML5 player provides standard controls including fullscreen, seek, volume, and playback speed. The plugin is tiny - just [58 lines of vanilla Javascript](https://github.com/alangrainger/mattermost-video-player-plugin/blob/main/webapp/main.js) (plus comments).
 
 ![Mattermost channel showing a video playing inline in place of the default file-attachment chip](screenshot.webp)
 
 ## Why doesn't Mattermost play videos inline?
 
-Out of the box, Mattermost's web and desktop clients render uploaded video files as a generic file-attachment chip — the user has to click to open a preview modal, or download the file, before it will play. The Mattermost mobile app already plays videos inline in the channel stream; the web/desktop clients do not. This plugin closes that gap by inserting an HTML5 `<video>` element under each video attachment so it plays in place, the same way images already do.
+Out of the box, Mattermost's web and desktop clients render uploaded video files as a generic file-attachment chip — the user has to click to open a preview modal, or download the file, before it will play. On v12+, media posts render as a gallery of tiles that open a fullscreen modal instead. The Mattermost mobile app already plays videos inline in the channel stream; the web/desktop clients do not. This plugin closes that gap by inserting an HTML5 `<video>` element under each video attachment so it plays in place, the same way images already do.
 
 ## Install
 
@@ -20,15 +20,15 @@ You will need Mattermost system-admin access.
 4. In the **Installed Plugins** list, find "Video Player" and click **Enable**.
 5. Refresh the Mattermost browser tab (Ctrl+Shift+R / Cmd+Shift+R) so the new webapp bundle is picked up.
 
-After enabling, any post containing a video attachment will display an inline player in place of the file chip.
+After enabling, any post containing a video attachment will display an inline player in place of the file chip or gallery tile.
 
 To uninstall: in the same System Console page, click **Disable** then **Remove** on the plugin row.
 
 ## How it works
 
-A small CSS rule hides any file-attachment chip whose icon class identifies it as a video. A MutationObserver then watches for those chips appearing in the DOM and, for each, inserts a sibling `<video controls>` element pointing at the Mattermost file URL.
+A small CSS rule hides any file-attachment chip whose icon class identifies it as a video. A MutationObserver then watches for those chips appearing in the DOM and, for each, inserts a sibling `<video controls>` element pointing at the Mattermost file URL. On v12+, media posts render as MediaGallery tiles instead; the same observer picks up video tiles and places the player inside the tile in place of the thumbnail.
 
-This is approximately 40 lines of vanilla JavaScript with no build step. The plugin ships as a single JS file plus `plugin.json`.
+This is about 60 lines of vanilla JavaScript with no build step. The plugin ships as a single JS file plus `plugin.json`.
 
 ## Build
 
@@ -40,7 +40,7 @@ Produces `dist/mattermost-video-player.tar.gz`, ready to upload via **System Con
 
 ## Compatibility
 
-Targets Mattermost server v10 and later. Relies on the current `.post-image__column` / `.post-image__download` / `.file-icon.video` DOM shape in the webapp. If Mattermost refactors that markup, this plugin will silently no-op (chips will continue to render as before). Also requires a browser supporting CSS `:has()` (Chrome 105+, Firefox 121+, Safari 15.4+).
+Targets Mattermost server v10 and later. Relies on the current `.post-image__column` / `.post-image__download` / `.file-icon.video` DOM shape in the webapp. On v12+ it additionally relies on the MediaGallery shape (`.MediaGallery__tile`, `.MediaGallery__row`, the play-indicator class and `a.size-aware-image__download`), verified against v12.1.0. If Mattermost refactors that markup, this plugin will silently no-op (chips and tiles will continue to render as before). Also requires a browser supporting CSS `:has()` (Chrome 105+, Firefox 121+, Safari 15.4+).
 
 ## What video formats are supported?
 
