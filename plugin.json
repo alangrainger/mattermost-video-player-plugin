@@ -1,7 +1,7 @@
 {
     "id": "mattermost-video-player",
     "name": "Video Player",
-    "description": "Replaces the file-attachment chip for video uploads with an inline HTML5 video player.",
+    "description": "Replaces video attachments with an inline HTML5 video player.",
     "version": "1.0.3",
     "min_server_version": "10.0.0",
     "webapp": {
